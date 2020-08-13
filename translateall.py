@@ -12,8 +12,8 @@ import unicodedata
 import PyPDF2
 from docx import Document
 from fpdf import FPDF 
-
-
+import requests
+from bs4 import BeautifulSoup
 
 class MainWindow(QtWidgets.QMainWindow):
 
@@ -24,7 +24,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.pencere = Window()
         self.setCentralWidget(self.pencere)
 
-        
 
 
     def ui(self):
@@ -55,7 +54,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def about(self):
 
-        reply = QtWidgets.QMessageBox.warning(self,"About This Program","This Program uses IBM Services like IBM Translator, IBM Text-to-Speech\nand IBM Speech-to-Text. Developer of this program is Erhan Yaylalı",QtWidgets.QMessageBox.Yes)
+        reply = QtWidgets.QMessageBox.information(self,"About","This application is designed by Erhan Yaylalı.",QtWidgets.QMessageBox.Ok)
 
 
     def contact(self):
@@ -82,23 +81,25 @@ class MainWindow(QtWidgets.QMainWindow):
         if(fileName[0].endswith(".txt") or fileName[0].endswith(".docx")):
             text = textract.process(fileName[0])
             self.pencere.text.setText(str(text, 'utf-8'))
+            self.pencere.translate()
 
         elif(fileName[0].endswith(".srt")):
 
             with open(fileName[0],"r") as file:
                 self.pencere.text.setText(file.read())
+            self.pencere.translate()
 
-        else:
+        elif(fileName[0].endswith(".pdf")):
 
             pdfReader = PyPDF2.PdfFileReader(open(fileName[0],"rb"))
             tx = ""
             for i in range(pdfReader.numPages):
                 pgObj = pdfReader.getPage(i)
                 tx = tx + pgObj.extractText() + "\n\n" 
-
             self.pencere.text.setText(tx)
+            self.pencere.translate()
 
-        self.pencere.translate()
+        
 
 
 class Window(QtWidgets.QWidget):
@@ -111,11 +112,10 @@ class Window(QtWidgets.QWidget):
         self.historyNum = 0
 
     def init_ui(self):
-
         self.languages = ["English","French","German","Spanish","Turkish","Italian","Russian",]
         self.codes = ["en","fr","de","es","tr","it","ru"]
         self.codes2 = ["-US","-FR","-DE","-ES","","-IT",""]
-        self.voices = ["_AllisonVoice","_ReneeVoice","_DieterVoice","_LauraVoice","","FrancescaVoice",""]
+        self.voices = ["_AllisonVoice","_ReneeVoice","_DieterVoice","_LauraVoice","","_FrancescaVoice",""]
         self.textFrom = QtWidgets.QLabel("From")
         self.textTo= QtWidgets.QLabel("To")
 
@@ -140,7 +140,7 @@ class Window(QtWidgets.QWidget):
         self.lang1.addItems(self.languages)
         self.lang1.setCurrentIndex(0)
         self.lang2.addItems(self.languages)
-        self.lang2.setCurrentIndex(1)
+        self.lang2.setCurrentIndex(4)
 
         h_boxTop = QtWidgets.QHBoxLayout()  
         h_boxTop.addStretch()
@@ -194,28 +194,52 @@ class Window(QtWidgets.QWidget):
     def translate(self):
 
         txt = self.text.toPlainText()
-        lng = self.lang1.currentText()
-        lng2 = self.lang2.currentText()
 
-        index1 = self.languages.index(lng)
-        index2 = self.languages.index(lng2)
+        if not txt:
+            reply2 = QtWidgets.QMessageBox.warning(self,"Empty","First Type Something",QtWidgets.QMessageBox.Ok)
 
-        code = self.codes[index1] + "-" + self.codes[index2]
-        authenticator = IAMAuthenticator("Xe3IeU29IzGioIw3xq18UTbhugHeXo3TUfmRr-jgDfHR")
-        translator = LanguageTranslatorV3(authenticator = authenticator,version = "2018-05-01",)
-        translator.set_service_url("https://api.eu-gb.language-translator.watson.cloud.ibm.com/instances/e12288b7-995d-4405-bafc-aa5d0ca1a116")
+        else:
+            lng = self.lang1.currentText()
+            lng2 = self.lang2.currentText()
 
-        respond = translator.translate(text=txt,model_id = code)
-        result = respond.get_result()
+            index1 = self.languages.index(lng)
+            index2 = self.languages.index(lng2)
 
-        hist = lng + " : " + txt
-        hist2 = lng2 + " : " + result["translations"][0]["translation"]
+            if(self.codes[index1] == "fr" and (self.codes[index2] == "es" or self.codes[index2] == "tr" or self.codes[index2] == "it" or self.codes[index2] == "ru")):
+                repl = "You can't translate " + self.languages[index1] + " to " + self.languages[index2]
+                buttonReply = QtWidgets.QMessageBox.warning(self, "Error", repl, QtWidgets.QMessageBox.Ok)
+
+            elif(self.codes[index1] == "de" and (self.codes[index2] == "es" or self.codes[index2] == "tr" or self.codes[index2] == "ru")):
+                repl = "You can't translate " + self.languages[index1] + " to " + self.languages[index2]
+                buttonReply = QtWidgets.QMessageBox.warning(self, "Error", repl, QtWidgets.QMessageBox.Ok)
+
+            elif(self.codes[index1] == "it" and (self.codes[index2] == "fr" or self.codes[index2] == "es" or self.codes[index2] == "tr" or self.codes[index2] == "ru")):
+                repl = "You can't translate " + self.languages[index1] + " to " + self.languages[index2]
+                buttonReply = QtWidgets.QMessageBox.warning(self, "Error", repl, QtWidgets.QMessageBox.Ok)
+
+            elif(self.codes[index1] == "tr" and (self.codes[index2] == "fr" or self.codes[index2] == "de" or self.codes[index2] == "es" or self.codes[index2] == "it" or self.codes[index2] == "ru")):
+                repl = "You can't translate " + self.languages[index1] + " to " + self.languages[index2]
+                buttonReply = QtWidgets.QMessageBox.warning(self, "Error", repl, QtWidgets.QMessageBox.Ok)
+
+            elif(self.codes[index1] == "ru" and (self.codes[index2] == "fr" or self.codes[index2] == "de" or self.codes[index2] == "es" or self.codes[index2] == "it" or self.codes[index2] == "tr")):
+                repl = "You can't translate " + self.languages[index1] + " to " + self.languages[index2]
+                buttonReply = QtWidgets.QMessageBox.warning(self, "Error", repl, QtWidgets.QMessageBox.Ok)
+
+            else:
+                code = self.codes[index1] + "-" + self.codes[index2]
+                authenticator = IAMAuthenticator("Xe3IeU29IzGioIw3xq18UTbhugHeXo3TUfmRr-jgDfHR")
+                translator = LanguageTranslatorV3(authenticator = authenticator,version = "2018-05-01",)
+                translator.set_service_url("https://api.eu-gb.language-translator.watson.cloud.ibm.com/instances/e12288b7-995d-4405-bafc-aa5d0ca1a116")
+
+                respond = translator.translate(text=txt,model_id = code)
+                result = respond.get_result()
+
+                hist = lng + " : " + txt
+                hist2 = lng2 + " : " + result["translations"][0]["translation"]
                 
-        self.history.append([hist,hist2])
-        
-
-        self.historyNum += 1
-        self.text2.setText(result["translations"][0]["translation"])
+                self.history.append([hist,hist2])
+                self.historyNum += 1
+                self.text2.setText(result["translations"][0]["translation"])
 
 
     def speech2text(self):
@@ -233,7 +257,6 @@ class Window(QtWidgets.QWidget):
          
         self.text.setText(r.recognize_google(audio, language=langCode))
         self.text2.clear()
-        self.translate()
         
 
 
@@ -249,11 +272,16 @@ class Window(QtWidgets.QWidget):
         index2 = self.languages.index(lng2)
         voice2 = self.codes[index2] + self.codes2[index2] + self.voices[index2]
 
-        with open("temp.mp3","wb") as audio:
-            audio.write(tx2sp.synthesize(self.text2.toPlainText(),voice=voice2,accept="audio/mp3").get_result().content)
+        if (self.codes[index2] == "tr" or self.codes[index2] == "ru"):
+            repl = "You can't use Text-to-Speech feauture in " + self.languages[index2]
+            buttonReply = QtWidgets.QMessageBox.warning(self, "Error", repl, QtWidgets.QMessageBox.Ok)
 
-        playsound("temp.mp3")
-        os.remove("temp.mp3")
+        else:
+            with open("temp.mp3","wb") as audio:
+                audio.write(tx2sp.synthesize(self.text2.toPlainText(),voice=voice2,accept="audio/mp3").get_result().content)
+
+            playsound("temp.mp3")
+            os.remove("temp.mp3")
         
 
     def swap(self):
@@ -275,7 +303,7 @@ class Window(QtWidgets.QWidget):
     def saveFunc(self):
 
         if not self.text2.toPlainText():
-            buttonReply2 = QtWidgets.QMessageBox.warning(self, "Warning", "You can't create empty file.\n Please first use translator", QtWidgets.QMessageBox.Ok)
+            buttonReply2 = QtWidgets.QMessageBox.warning(self, "Empyt Content", "You can't save empty file.\n Please first use translator", QtWidgets.QMessageBox.Ok)
 
         else:
             fileName = QtWidgets.QFileDialog.getSaveFileName(self,"Save File",os.getenv("Home"),"Text (*.txt *.docx *.srt)")
@@ -353,6 +381,8 @@ class Temp(QtWidgets.QWidget):
 
     def ui(self):
 
+        self.pencere = Window()
+        self.pencere.hide()
         self.show()
         self.setWindowTitle("Web Browser")
         self.setWindowIcon(QtGui.QIcon('logo.png'))
@@ -377,7 +407,9 @@ class Temp(QtWidgets.QWidget):
         valid = validators.url(self.line.text())
         
         if valid == True:
+
             self.brows = Browser(self.line.text())
+            response = requests.get(self.line.text())
             self.hide()
 
         else:
