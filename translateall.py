@@ -24,6 +24,52 @@ class MainWindow(QtWidgets.QMainWindow):
         self.pencere = Window()
         self.setCentralWidget(self.pencere)
 
+        self.pencere.setStyleSheet("""
+            QPushButton {
+                color: #fff;
+                width: 80px;
+                height: 25px;
+                border: 2px solid #942BFE;
+                border-radius: 3px;
+                background-color: #942BFE;
+                margin: 5px 5px;
+            }
+            QPushButton:hover {
+                border: 2px solid #FF9678;
+                background-color: #FF9678;
+            }
+            QPushButton:pressed {
+                border: 2px solid #fff;
+                background-color: #fff;
+            }
+            QTextEdit {
+                color: #fff;
+                font-size: 15px;
+                border: 3px trasnparent;
+                border-radius: 3px;
+                background-color: #18BC9C;
+            }
+            QLabel{
+                color: #fff;
+                font-size: 13px;
+                margin-right: 4px;
+                margin-bottom: 1px;
+                place-holer
+            }
+            QComboBox {
+                color: #fff;
+                border: 1px solid #ad575f;
+                border-radius: 3px;
+                padding: 1px 18px 1px 3px;
+                background-color: #ad575f;
+            }
+            QComboBox QListView{
+                background-color: #ad575f;
+            }
+        """)
+        self.setStyleSheet("""
+            background-color: #41436A;            
+            """)
 
 
     def ui(self):
@@ -35,6 +81,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         menuBar = self.menuBar()
         menu = menuBar.addMenu("More")
+        menuBar.setStyleSheet("QMenuBar{color: #fff;}QMenuBar:pressed{color: #000;}QMenu{color: #fff;font: 10pt;background-color: #41436A;border: 1px solid #fff;}QMenu::item:selected{color: #fff;background-color: green;}")
         open = QtWidgets.QAction("Open File",self)
         open.triggered.connect(self.open)
         about = QtWidgets.QAction("About",self)
