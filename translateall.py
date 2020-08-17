@@ -1,5 +1,7 @@
 import sys, os
 from PyQt5 import QtWidgets,QtGui,QtCore
+import sys, os
+from PyQt5 import QtWidgets,QtGui,QtCore
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from ibm_watson import LanguageTranslatorV3,SpeechToTextV1,TextToSpeechV1
 from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
@@ -12,8 +14,9 @@ import unicodedata
 import PyPDF2
 from docx import Document
 from fpdf import FPDF 
-import requests
-from bs4 import BeautifulSoup
+from PIL import Image
+import pytesseract as tess
+tess.pytesseract.tesseract_cmd = r"C:\Users\erhan\AppData\Local\Tesseract-OCR\tesseract.exe"
 
 class MainWindow(QtWidgets.QMainWindow):
 
@@ -159,10 +162,13 @@ class Window(QtWidgets.QWidget):
         self.historyNum = 0
 
     def init_ui(self):
+
         self.languages = ["English","French","German","Spanish","Turkish","Italian","Russian",]
         self.codes = ["en","fr","de","es","tr","it","ru"]
         self.codes2 = ["-US","-FR","-DE","-ES","","-IT",""]
-        self.voices = ["_AllisonVoice","_ReneeVoice","_DieterVoice","_LauraVoice","","_FrancescaVoice",""]
+        self.voices = ["_AllisonVoice","_ReneeVoice","_DieterVoice","_LauraVoice","","FrancescaVoice",""]
+        self.models = ["en-US_BroadbandModel","fr-FR_BroadbandModel","de-DE_BroadbandModel","es-ES_BroadbandModel","","it-IT_BroadbandModel",""]
+        self.images = ["eng","fra","deu","spa","tur","ita","rus"]
         self.textFrom = QtWidgets.QLabel("From")
         self.textTo= QtWidgets.QLabel("To")
 
@@ -172,6 +178,9 @@ class Window(QtWidgets.QWidget):
         self.buttonClear.clicked.connect(self.clear)
         self.buttonS2T = QtWidgets.QPushButton("Speech to Text")
         self.buttonS2T.clicked.connect(self.speech2text)
+        self.buttonI2T = QtWidgets.QPushButton("Image to Text")
+        self.buttonI2T.clicked.connect(self.image2text)
+        self.buttonI2T.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.buttonT2S = QtWidgets.QPushButton("Text to Speech")
         self.buttonT2S.clicked.connect(self.text2speech)
         self.buttonSwap = QtWidgets.QPushButton("Swap")
@@ -217,6 +226,7 @@ class Window(QtWidgets.QWidget):
         v_boxButtonS2T = QtWidgets.QHBoxLayout()
         v_boxButtonT2S = QtWidgets.QHBoxLayout()
         v_boxButtonS2T.addWidget(self.buttonS2T)
+        v_boxButtonS2T.addWidget(self.buttonI2T)
         v_boxButtonT2S.addWidget(self.save)
         v_boxButtonT2S.addWidget(self.buttonT2S)
         v_boxBottom.addLayout(v_boxButtonS2T)
@@ -329,6 +339,20 @@ class Window(QtWidgets.QWidget):
 
             playsound("temp.mp3")
             os.remove("temp.mp3")
+
+
+    def image2text(self):
+
+        lng2 = self.lang1.currentText()
+        index2 = self.languages.index(lng2)
+        fileName = QtWidgets.QFileDialog.getOpenFileName(self,"Open",os.getenv("Home"),"Image (*.png *.jpeg *.jpg)")
+
+
+        if fileName[0] != "":
+
+            img = Image.open(fileName[0])
+            text = tess.image_to_string(img, lang = self.images[index2])
+            self.text.setText(text)
         
 
     def swap(self):
