@@ -22,6 +22,11 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def __init__(self):
 
+
+
+
+
+
         super().__init__()
         self.ui()
         self.pencere = Window()
